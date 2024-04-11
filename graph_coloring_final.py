@@ -1,7 +1,6 @@
 import random
 from random import randint
 import numpy as np
-import matplotlib.pyplot as plotlib
 
 
 #########################################
@@ -11,9 +10,6 @@ import matplotlib.pyplot as plotlib
 NR_VERTICES_GRAFO = 30
 TAMANHO_POPULACAO = 40
 
-GERACAO = np.array([]) 
-FITNESS = np.array([]) 
-
 
 ####################################################################
 #FUNÇÕES UTILIZADAS PARA O AG E PARA A COLORAÇÃO MIN
@@ -21,11 +17,139 @@ FITNESS = np.array([])
 
 
 def criaCromossomo(maximoNumCores):
-    
     return np.random.randint(1, maximoNumCores + 1, size=(NR_VERTICES_GRAFO))
 
 def criaPopulacao(maximoNumCores):
+    print(maximoNumCores)
     return np.array([criaCromossomo(maximoNumCores) for i in range(TAMANHO_POPULACAO)])
+
+
+def welch_powell(grafo):
+    # Passo 1: Ordenar os vértices por grau (do maior para o menor)
+    graus = [(v, sum(grafo[v])) for v in range(len(grafo))]
+    graus_ordenados = sorted(graus, key=lambda x: x[1], reverse=True)
+
+    # Inicializar o dicionário de cores com todos os vértices do grafo
+    cores = {v: None for v in range(len(grafo))}
+
+    # Passo 2: Colorir os vértices
+    for vertice, _ in graus_ordenados:
+        # Conjunto de cores dos vizinhos
+        cores_vizinhos = {cores[vizinho] for vizinho, adjacente in enumerate(grafo[vertice]) if
+                          adjacente and cores[vizinho] is not None}
+
+        # Encontrar a menor cor disponível
+        cor = 1
+        while cor in cores_vizinhos:
+            cor += 1
+
+        # Atribuir a cor ao vértice
+        cores[vertice] = cor
+
+    # Retornar as cores atribuídas aos vértices
+    return cores
+
+
+def aplicaHeuristicaGulosa(populacao, grafo, maximoNumCores):
+    novaPopulacao = []
+    for cromossomo in populacao:
+        # Aplica a heurística de coloração gulosa a cada cromossomo da população
+        cromossomo_guloso = coloracao_gulosa(grafo, maximoNumCores)
+        novaPopulacao.append(cromossomo_guloso)
+    return np.array(novaPopulacao)
+
+def coloracao_gulosa(grafo, maximoNumCores):
+    num_vertices = len(grafo)
+    cores = [0] * num_vertices  # Inicializa vetor de cores com 0
+
+    for vertice in range(num_vertices):
+        cores_disponiveis = list(range(1, maximoNumCores + 1))  # Lista de cores disponíveis para o vértice atual
+        random.shuffle(cores_disponiveis)  # Embaralhar a ordem das cores disponíveis
+
+        for vizinho in range(num_vertices):
+            if grafo[vertice][vizinho] and cores[vizinho] in cores_disponiveis:
+                cores_disponiveis.remove(cores[vizinho])  # Remove cores já usadas pelos vizinhos
+
+        if not cores_disponiveis:  # Se não houver cores disponíveis, adiciona uma nova cor
+            cores_disponiveis.append(max(cores) + 1)
+
+        # Atribui a menor cor disponível ao vértice atual
+        cores[vertice] = cores_disponiveis[0]
+
+    return cores
+#
+#
+#
+# def criaPopulacaoComHeuristica(grafo, maximoNumCores):
+#     populacao = []
+#     for i in range(TAMANHO_POPULACAO // 2):  # Metade da população gerada aleatoriamente
+#         cromossomo = criaCromossomo(maximoNumCores)
+#         print(cromossomo)
+#         populacao.append(cromossomo)
+#     for _ in range(TAMANHO_POPULACAO // 2):
+#         # Embaralhar a ordem dos vértices antes de aplicar a heurística de coloração gulosa
+#         vertices_embaralhados = list(range(NR_VERTICES_GRAFO))
+#         random.shuffle(vertices_embaralhados)
+#
+#         grafo_embaralhado = np.zeros((NR_VERTICES_GRAFO, NR_VERTICES_GRAFO))
+#         for i in vertices_embaralhados:
+#             for j in vertices_embaralhados:
+#                 grafo_embaralhado[i][j] = grafo[i][j]
+#
+#         cromossomo = coloracao_gulosa(grafo_embaralhado, maximoNumCores)
+#         populacao.append(cromossomo)
+#         print(cromossomo)
+#     return np.array(populacao)
+
+
+# def criaPopulacaoComHeuristica(maximoNumCores):
+#     print(maximoNumCores)
+#     populacao = []
+#     print("Populacao aleatoria")
+#     for i in range(TAMANHO_POPULACAO // 2): # Metade da população gerada aleatoriamente
+#         cromossomo = criaCromossomo(maximoNumCores)
+#         print(cromossomo)
+#         populacao.append(cromossomo)
+#     print("Populacao heuristica")
+#     # Metade da população gerada pela heurística gulosa
+#     for j in range(TAMANHO_POPULACAO // 2):
+#         cromossomo = heuristica_gulosa_coloracao()
+#         print(cromossomo)
+#         populacao.append(cromossomo)
+#
+#     # Convertendo a lista de cromossomos para um array NumPy
+#     populacao = np.array(populacao)
+#
+#     return populacao
+#
+# def heuristica_gulosa_coloracao():
+#     n = len(grafo)
+#     grau = np.sum(grafo, axis=1)  # Calcular o grau de cada vértice
+#     ordem_vertices = np.argsort(grau)  # Ordenar os vértices com base no grau
+#     cores = np.full(n, -1, dtype=int)  # -1 indica que o vértice ainda não foi colorido
+#     disponivel = np.full(n, False, dtype=bool)
+#
+#     cores[ordem_vertices[0]] = 0  # Colorir o primeiro vértice com a cor 0
+#     disponivel[0] = True  # Marcar a cor 0 como disponível
+#
+#     for u in ordem_vertices[1:]:
+#         disponivel.fill(True)  # Resetar informações de cores disponíveis
+#
+#         # Verificar cores dos vizinhos e marcar suas cores como não disponíveis
+#         for i in range(n):
+#             if grafo[u][i] == 1 and cores[i] != -1:
+#                 disponivel[cores[i]] = False
+#
+#         # Encontrar a primeira cor disponível
+#         cor = 0
+#         while cor < n and not disponivel[cor]:
+#             cor += 1
+#
+#         cores[u] = cor  # Atribuir a primeira cor disponível ao vértice
+#         disponivel[cor] = True  # Marcar a cor atribuída como disponível
+#
+#     return cores
+#
 
 
 def calculaFitness(grafo, cromossomo):
@@ -49,26 +173,6 @@ def selecaoPorTorneio(populacao):
     return novaPopulacao
 
 
-def roulette_wheel_selection(population): 
-	total_fitness = 0
-	for individual in population: 
-		total_fitness += 1/(1+calculaFitness(grafo, individual)) 
-	cumulative_fitness = [] 
-	cumulative_fitness_sum = 0
-	for i in range(len(population)): 
-		cumulative_fitness_sum += 1 / (1+calculaFitness(grafo, population[i]))/total_fitness 
-		cumulative_fitness.append(cumulative_fitness_sum) 
-
-	new_population = [] 
-	for i in range(len(population)): 
-		roulette = random.uniform(0, 1) 
-		for j in range(len(population)): 
-			if (roulette <= cumulative_fitness[j]): 
-				new_population.append(population[j]) 
-				break
-	return new_population 
-
-
 def crossover(pai1, pai2):
     splitPoint = randint(2, NR_VERTICES_GRAFO - 2)
     filho1 = np.concatenate((pai1[:splitPoint], pai2[splitPoint:]))
@@ -76,14 +180,32 @@ def crossover(pai1, pai2):
     return filho1, filho2
 
 
-def mutacao(cromossomo, chance):    
+def mutacao(cromossomo, chance):
     probabilidade = random.uniform(0, 1)
+    vertices_conflitantes = []
     if chance <= probabilidade:
         for vertice1 in range(NR_VERTICES_GRAFO):
             for vertice2 in range(vertice1, NR_VERTICES_GRAFO):
                 if grafo[vertice1][vertice2] == 1 and cromossomo[vertice1] == cromossomo[vertice2]:
-                    cromossomo[vertice1] = randint(1, maximoNumCores)
+                    vertices_conflitantes.append(vertice1)
+                    break
+        for vertice in vertices_conflitantes:
+            cores_possiveis = set(range(1, maximoNumCores + 1))
+            for vizinho in range(NR_VERTICES_GRAFO):
+                if grafo[vertice][vizinho] == 1 and cromossomo[vizinho] in cores_possiveis:
+                    cores_possiveis.remove(cromossomo[vizinho])
+            if cores_possiveis:
+                cromossomo[vertice] = min(cores_possiveis)
     return cromossomo
+
+# def mutacao(cromossomo, chance):
+#     probabilidade = random.uniform(0, 1)
+#     if chance <= probabilidade:
+#         for vertice1 in range(NR_VERTICES_GRAFO):
+#             for vertice2 in range(vertice1, NR_VERTICES_GRAFO):
+#                 if grafo[vertice1][vertice2] == 1 and cromossomo[vertice1] == cromossomo[vertice2]:
+#                     cromossomo[vertice1] = randint(1, maximoNumCores)
+#     return cromossomo
 
 
 def criaGrafo():
@@ -208,7 +330,12 @@ if __name__ == '__main__':
 
     for _ in iter(int, 1):
         populacao = criaPopulacao(maximoNumCores)
-
+        #populacao = aplicaHeuristicaGulosa(populacao,grafo,maximoNumCores)
+        # for cromossomo in populacao:
+        #     cores_refinadas = welch_powell(grafo)
+        #     # Atualizar o cromossomo com as cores refinadas
+        #     for vertice, cor in cores_refinadas.items():
+        #         cromossomo[vertice] = cor
         melhorFitness = calculaFitness(grafo, populacao[0])
         fittest = populacao[0]
 
@@ -221,7 +348,7 @@ if __name__ == '__main__':
             while melhorFitness != 0 and geracao != numGeracoes:
                 geracao += 1
 
-                populacao = roulette_wheel_selection(populacao)
+                populacao = selecaoPorTorneio(populacao)
 
                 if ehPar(populacao):
                     populacao.pop()
@@ -245,24 +372,13 @@ if __name__ == '__main__':
                     if(calculaFitness(grafo, individuo) < melhorFitness):
                         melhorFitness = calculaFitness(grafo, individuo)
                         fittest = individuo
-
-                GERACAO = np.append(GERACAO, geracao)
-                FITNESS = np.append(FITNESS, melhorFitness)
-
                 if melhorFitness == 0:
                     break
-
 
             if melhorFitness == 0:
                 cenario_melhor_fitness_0(maximoNumCores)
                 maximoNumCores -= 1
                 count = 0
-                plotlib.plot(GERACAO, FITNESS) 
-                plotlib.xlabel("Número de gerações") 
-                plotlib.ylabel("Melhor fitness") 
-                plotlib.show()
-                GERACAO = np.array([])
-                FITNESS = np.array([])
             else:
                 if count != 2 and maximoNumCores > 1:
                     countCoresFalhas = maximoNumCores
@@ -279,5 +395,4 @@ if __name__ == '__main__':
                 else:
                     outros_cenarios(maximoNumCores)
                 printa_solucao_correta_da_coloracao(testaColoracao)
-
                 break
