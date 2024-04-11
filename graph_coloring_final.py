@@ -1,6 +1,7 @@
 import random
 from random import randint
 import numpy as np
+import time
 
 
 #########################################
@@ -317,6 +318,9 @@ def printa_solucao_correta_da_coloracao(testaColoracao):
 #####################################################################################################
 
 if __name__ == '__main__':
+
+    timeStart = time.time()
+
     grafo = criaGrafo()
 
     verifica_casos_base(NR_VERTICES_GRAFO, grafo)
@@ -395,4 +399,7 @@ if __name__ == '__main__':
                 else:
                     outros_cenarios(maximoNumCores)
                 printa_solucao_correta_da_coloracao(testaColoracao)
+                timeEnd = time.time()
+                executionTime = timeEnd - timeStart
+                print(f'Tempo de execução: {executionTime} segundos')
                 break
