@@ -1,6 +1,7 @@
 import random
 from random import randint
 import numpy as np
+import matplotlib.pyplot as plotlib
 
 
 #########################################
@@ -9,6 +10,9 @@ import numpy as np
 
 NR_VERTICES_GRAFO = 30
 TAMANHO_POPULACAO = 40
+
+GERACAO = np.array([]) 
+FITNESS = np.array([]) 
 
 
 ####################################################################
@@ -242,13 +246,23 @@ if __name__ == '__main__':
                         melhorFitness = calculaFitness(grafo, individuo)
                         fittest = individuo
 
+                GERACAO = np.append(GERACAO, geracao)
+                FITNESS = np.append(FITNESS, melhorFitness)
+
                 if melhorFitness == 0:
                     break
+
 
             if melhorFitness == 0:
                 cenario_melhor_fitness_0(maximoNumCores)
                 maximoNumCores -= 1
                 count = 0
+                plotlib.plot(GERACAO, FITNESS) 
+                plotlib.xlabel("Número de gerações") 
+                plotlib.ylabel("Melhor fitness") 
+                plotlib.show()
+                GERACAO = np.array([])
+                FITNESS = np.array([])
             else:
                 if count != 2 and maximoNumCores > 1:
                     countCoresFalhas = maximoNumCores
@@ -265,4 +279,5 @@ if __name__ == '__main__':
                 else:
                     outros_cenarios(maximoNumCores)
                 printa_solucao_correta_da_coloracao(testaColoracao)
+
                 break
